@@ -60,6 +60,17 @@ const config = {
         systemvars: true,
       },
     ],
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'curso',
+        path: 'docs-curso',
+        routeBasePath: 'curso',
+        sidebarPath: './sidebarsCurso.js',
+        remarkPlugins: [remarkMath],
+        rehypePlugins: [rehypeKatex],
+      },
+    ],
   ],
   presets: [
     [
@@ -67,9 +78,12 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          sidebarPath: './sidebars.js',
+          id: 'guia',
+          sidebarPath: './sidebarGuia.js',
+          path: 'docs-guia',
+          routeBasePath: 'guia',
           remarkPlugins: [remarkMath],
-          rehypePlugins: [rehypeKatex]
+          rehypePlugins: [rehypeKatex],
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           //editUrl:
@@ -123,18 +137,28 @@ const config = {
           src: 'img/logo.svg',
         },
         items: [
-          {
+          /*{
             type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
+            docsPluginId: 'guia',
             position: 'left',
-            label: 'Conteúdo',
+            label: 'Guia',
+          },*/
+          {
+          label: 'Guia',
+          to: '/guia/apresentacao/', // Path to the version 1.0 docs
+          position: 'left',
           },
+          {
+            label: 'Curso Explorador',
+            to: '/curso/apresentacao/', // Path to the version 1.0 docs
+            position: 'left',
+            },          
           {
             type: 'custom-Login', 
             position: "right",
             itemProp: 44,
             anotherProp: "xyz"
-        }, 
+          }, 
           /*{to: '/blog', label: 'Blog', position: 'left'},*/
           //{
           //  href: 'https://github.com/facebook/docusaurus',
@@ -142,6 +166,10 @@ const config = {
           //  position: 'right',
           //},
         ],
+      },
+      colorMode: {
+        defaultMode: 'light',
+        disableSwitch: true,
       },
       footer: {
         style: 'dark',

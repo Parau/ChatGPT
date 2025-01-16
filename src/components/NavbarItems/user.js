@@ -7,14 +7,14 @@ import 'react-tooltip/dist/react-tooltip.css';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import { FaSignOutAlt } from 'react-icons/fa';
-import { useThemeConfig } from "@docusaurus/theme-common";
-
 import {
   LOGIN_BUTTON,
   LOGIN_PATH,
   LOGOUT_BUTTON,
   LOGOUT_PATH,
 } from "@site/src/utils/constants";
+import { userData, useUserContext } from '../../context';
+import {  loadUserBookDataCache } from '../../cache.dados.usuario';
 
 const User = () => {
   const [user, setUser] = useState(null);
@@ -22,6 +22,8 @@ const User = () => {
   const [tooltipContent, setTooltipContent] = useState("Carregando infos da licença...");
   const { siteConfig } = useDocusaurusContext();
   const [cancelaLogin, setCancelaLogin] = useState(null);
+  const { userData, setUserData } = useUserContext();
+  
 
   const location = useLocation();
   const history = useHistory();
@@ -37,16 +39,43 @@ const User = () => {
           // Force token refresh to get the latest claims
           const idTokenResult = await user.getIdTokenResult(true); // Get the full token result
           const customClaims = idTokenResult.claims;
+
+          //se ainda não tem ID, atualiza o contexto
+          if ((!userData.fetching) || //Verifica se foi acionado o processo de carga dos dados do servidor (tem que aguardar terminar o processo)
+              (userData.id !== user.uid)) //Verifica se houve algum problema de sync no processo de login em que o ID no contexto é diferente do ID atual
+          {
+            console.log('USER ID === NULL');
+            const result = await loadUserBookDataCache(siteConfig.customFields.bookCode, user.uid);
+
+            if (result === null) {
+              console.log('No cache data found');
+              setUserData((prev) => ({
+                ...prev,
+                id: user.uid,
+                modulos: [],
+              }));
+            }
+            else {
+              setUserData((prev) => ({
+                ...prev,
+                id: user.uid,
+                modulos: result.modulos,
+              }));
+            }
+          } else { 
+
+          }
+
           setExpiry(""); // Initialize expiry
           let cancelaLoginReason = ''; // Rename to avoid confusion with state variable
           console.log(customClaims);
           if (customClaims.bookExpiryDates) {
             const { bookExpiryDates } = customClaims;
-            console.log(customClaims);
+            //console.log(customClaims);
             // Check if the bookCode deste livro gerado (arquivo config) exists and get the expiry date
             if (bookExpiryDates[siteConfig.customFields.bookCode]) {
               const excelExpiryDate = bookExpiryDates[siteConfig.customFields.bookCode];
-              const excelBuildDate = 1 + siteConfig.customFields.lastBuild;
+              const excelBuildDate = siteConfig.customFields.lastBuild; //considera um dia a menos o build para evitar o problema do build no servidor virar o dia antes por estar em um fuso mais adiantado que o horario do browser no brasil
               const excelBrowserDate = 1 + Math.floor((new Date() - new Date(1899, 11, 31)) / (24 * 60 * 60 * 1000));
 
               // Convert Excel serial date to a valid date 
@@ -122,6 +151,11 @@ const User = () => {
   }, [cancelaLogin]); // Runs only when cancelaLogin changes
 
   const handleLogout = async () => {
+    //atualiza o contexto indicando que usuário está deslogado
+    setUserData((prev) => ({
+      ...prev,
+      id: 'Logged out',
+    }));
     await signOut(firebase.auth()); // Logs out the user
     setUser(null); // Clears the user state
     history.push(`${LOGOUT_PATH}?p=${encodeURIComponent(location.pathname)}`); // Redirects
